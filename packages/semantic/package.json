@@ -30,7 +30,7 @@
     "rdf-validate-shacl": "^0.6.5"
   },
   "devDependencies": {
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vitest": "^5.0.2",
     "@types/jsonld": "^1.5.15",
     "@types/n3": "^1.26.1",
