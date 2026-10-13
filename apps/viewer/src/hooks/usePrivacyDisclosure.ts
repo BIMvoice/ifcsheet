@@ -19,6 +19,7 @@ import { toast } from '@/components/ui/toast';
 import { useOptionalExtensionHost } from '@/sdk/ExtensionHostProvider';
 import { useTranslation } from '@/i18n';
 import { openSettings } from '@/lib/settings/open-settings';
+import { analyticsConfigured } from '@/lib/analytics';
 
 const STORAGE_KEY = 'ifclite.extensions.privacy-disclosure.v2';
 
@@ -35,7 +36,7 @@ export function usePrivacyDisclosure(): void {
     }
     // Defer slightly so the toast doesn't fight with the splash UI.
     const handle = window.setTimeout(() => {
-      toast.info(t('settings.privacy.toastDisclosure'), {
+      toast.info(analyticsConfigured ? t('settings.privacy.toastDisclosure') : t('settings.privacy.toastDisclosureLocal'), {
         label: t('settings.privacy.toastAction'),
         onClick: () => openSettings('privacy'),
       });

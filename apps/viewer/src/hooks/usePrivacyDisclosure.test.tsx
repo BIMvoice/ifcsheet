@@ -28,10 +28,11 @@ afterEach(() => {
   localStorage.removeItem('ifclite.extensions.privacy-disclosure.v2');
 });
 
-it('translates the analytics disclosure and opens Settings → Privacy (#5866)', async () => {
+it('translates the disclosure of a build without analytics and opens Settings → Privacy (#5866)', async () => {
   localStorage.removeItem('ifclite.extensions.privacy-disclosure.v2');
   registerLocale('privacy-disclosure-test', {
-    'settings.privacy.toastDisclosure': 'TRANSLATED ANALYTICS DISCLOSURE',
+    'settings.privacy.toastDisclosure': 'SENDS ANALYTICS',
+    'settings.privacy.toastDisclosureLocal': 'TRANSLATED NO ANALYTICS DISCLOSURE',
     'settings.privacy.toastAction': 'OPEN TRANSLATED PRIVACY',
   });
   act(() => setLocale('privacy-disclosure-test'));
@@ -53,7 +54,8 @@ it('translates the analytics disclosure and opens Settings → Privacy (#5866)',
   );
 
   await advance(3550);
-  assert.match(latestToast(), /TRANSLATED ANALYTICS DISCLOSURE/);
+  assert.match(latestToast(), /TRANSLATED NO ANALYTICS DISCLOSURE/);
+  assert.doesNotMatch(latestToast(), /SENDS ANALYTICS/);
   const action = [...document.querySelectorAll('button')].find((button) => button.textContent?.includes('OPEN TRANSLATED PRIVACY'));
   assert.ok(action, 'the disclosure has a Settings → Privacy action');
   click(action);

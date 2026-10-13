@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { useTranslation } from '@/i18n';
 import { isAnalyticsOptedOut } from '@/lib/analytics-consent';
-import { setAnalyticsOptOut } from '@/lib/analytics';
+import { analyticsConfigured, setAnalyticsOptOut } from '@/lib/analytics';
 import { SettingsGroup, SettingsRow } from './SettingsGroup';
 
 export function AnalyticsConsentSection() {
@@ -14,8 +14,10 @@ export function AnalyticsConsentSection() {
   const [optedOut, setOptedOut] = useState(isAnalyticsOptedOut);
   return (
     <SettingsGroup title={t('settings.privacy.analyticsTitle')}>
-      <p className="text-xs text-muted-foreground">{t('settings.privacy.analyticsDisclosure')}</p>
-      <p className="text-xs text-muted-foreground">{t('settings.privacy.analyticsExclusions')}</p>
+      <p className="text-xs text-muted-foreground">
+        {analyticsConfigured ? t('settings.privacy.analyticsDisclosure') : t('settings.privacy.analyticsOff')}
+      </p>
+      {analyticsConfigured && <p className="text-xs text-muted-foreground">{t('settings.privacy.analyticsExclusions')}</p>}
       <SettingsRow
         label={t('settings.privacy.analyticsOptOut')}
         hint={t('settings.privacy.analyticsOptOutHint')}

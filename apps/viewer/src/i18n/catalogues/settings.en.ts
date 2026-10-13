@@ -60,6 +60,8 @@ export const settingsEn = {
   'settings.privacy.analyticsOptOutHint': 'Stops usage and error events from this browser.',
   'settings.privacy.learnMore': 'Read the privacy guide',
   'settings.privacy.toastDisclosure': '{app} stores an action log on your device. The hosted viewer also sends anonymous product analytics unless you opt out in Privacy settings.',
+  'settings.privacy.toastDisclosureLocal': '{app} stores an action log on your device. This build sends no analytics.',
+  'settings.privacy.analyticsOff': 'This build sends no usage or error events. Analytics only exists in a build that was set up with an analytics key.',
   'settings.privacy.toastAction': 'Privacy settings',
   'settings.collaboration.identityTitle': 'Your identity',
   'settings.collaboration.displayName': 'Display name',

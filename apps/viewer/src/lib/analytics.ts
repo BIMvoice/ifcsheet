@@ -115,6 +115,9 @@ const host = import.meta.env?.VITE_POSTHOG_HOST;
 // without a PostHog key.
 const enabled = Boolean(key && host) && typeof posthogClient?.init === 'function';
 
+/** Whether this build can send analytics at all: only one built with a key and a host. */
+export const analyticsConfigured = enabled;
+
 // Only the PostHog surface the viewer actually calls. Extend this type AND
 // the noop fallback together before using a new method at a call site — the
 // narrow type is what keeps keyless/Node environments crash-free.
