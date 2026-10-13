@@ -67,6 +67,10 @@ IfcSheet runs in your browser. IFC parsing and geometry run locally in WebAssemb
 
 Two things are off by default and only exist if whoever builds the app turns them on: a server for IFC parsing, and anonymous usage analytics. Analytics events are scrubbed of file and model names and can be opted out of. Build it yourself and you control both.
 
+## Where it is going
+
+The direction is in [VISION.md](VISION.md): you correct a drawing set, you do not build one. Each direction is an [issue you can comment on](https://github.com/BIMvoice/ifcsheet/issues?q=is%3Aissue+label%3Adirection).
+
 ## Status
 
 Early and in active development. Things will change, and some will break. Being worked on now:
