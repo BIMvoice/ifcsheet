@@ -1,45 +1,25 @@
-<!-- Keep this focused: one defect class per PR. Delete sections that do not apply. -->
+## What a user can now do
 
-## What and why
+<!-- One purpose. Name the task or issue it comes from. -->
 
-<!--
-The change and the problem it solves.
+## How it was checked
 
-Closes #<issue>   <- required unless this PR carries the `unqueued` label.
-                     The issue needs the `ready` label; a maintainer applies both.
-                     See CONTRIBUTING.md "Picking what to work on".
-                     The `Issue queue` check prints its own mode. While it says
-                     ADVISORY, a green tick does not mean the rule was met, so
-                     read the verdict rather than the tick.
--->
+<!-- Which model, which view, what you saw. Attach a screenshot of the drawing. -->
 
-## How it was verified
+- [ ] Seen working in the running app
+- [ ] A test fails without this change and passes with it
+- [ ] `pnpm typecheck` in `apps/viewer` is clean
 
-<!--
-What you RAN and what you OBSERVED. Not "should work", and not a restatement of the
-diff. A ticked box below is not evidence; this section is.
+## Not checked
 
-If the PR claims user-visible behaviour, show that behaviour: the command and its
-output, the fixture or model file, the measurement, the screenshot. Name something a
-reader could re-run.
+<!-- What you did not try: sheet, PDF, DXF, another view, a saved project. -->
 
-You do not need to have written the code. You do need to be able to demonstrate what
-it does, and to answer follow-up questions with evidence rather than another
-generation.
--->
+## For a maintainer to confirm
 
-- [ ] `cargo test --workspace` (Rust) and/or `pnpm test` (TS) pass locally
-- [ ] Geometry/WASM change: ran `scripts/build-wasm.sh` then `pnpm test:wasm-contract`
+<!-- Choices you made that are not obvious. Delete if none. -->
 
-## Checklist
+## Promises (see CONTRIBUTING.md)
 
-- [ ] A test asserts the new behavior through a fixture or a stated invariant, and
-      that test FAILS against the unfixed code (say how you checked)
-- [ ] Published `packages/*` touched: added a changeset (`pnpm changeset`) and, if
-      the export surface changed, ran `pnpm api-surface:update`. The bump level
-      follows AGENTS.md, not generic semver: never `patch` when the surface shrank
-- [ ] Geometry-output change: re-pinned **both** `mesh_determinism.json` and
-      `mesh_determinism.wasm32.json` (or: no geometry output changed)
-- [ ] House rules: no `as any` / `@ts-ignore`, no silent `catch {}`, no module
-      pushed past ~400 non-generated lines, no repo-wide `cargo fmt`
-- [ ] No client or project identifiers in code, tests, commit messages, or this PR
+- [ ] The model is not changed beyond properties, and nothing leaves the user's machine
+- [ ] Anything new the user can set is saved with the project, and old projects still open
+- [ ] Changeset added for anything a user would notice

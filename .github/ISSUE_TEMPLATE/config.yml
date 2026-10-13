@@ -1,8 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Security vulnerability (private advisory)
-    url: https://github.com/LTplus-AG/ifc-lite/security/advisories/new
-    about: Report a vulnerability privately. Do not open a public issue for it.
-  - name: Security vulnerability (email)
-    url: mailto:louis@lt.plus
-    about: Email fallback for security reports (mirrors SECURITY.md), in case private advisories are unavailable.
+  - name: Security problem (private report)
+    url: https://github.com/BIMvoice/ifcsheet/security/advisories/new
+    about: Report a security problem privately. Do not open a public issue for it.

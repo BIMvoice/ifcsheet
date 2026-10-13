@@ -111,6 +111,12 @@ Issues and pull requests are welcome. Open an issue first for anything large, so
 
 IfcSheet is built by [BIMvoice](https://github.com/BIMvoice): Ionut Ciuntuc and Petru Conduraru. Petru is an openBIM consultant and trainer.
 
+## Need a tool for your own IFC workflow?
+
+IfcSheet started as one architect's problem. If something in your work with IFC models costs you hours every week and no tool does it well, tell us about it. We build tools around IFC for real workflows, and yours may be the next one.
+
+Write to [petru@bimvoice.com](mailto:petru@bimvoice.com).
+
 ---
 
 ## For developers: the engine underneath

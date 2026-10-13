@@ -1,25 +1,17 @@
-# Security Policy
+# Security
 
-## Reporting a vulnerability
+## Reporting a problem
 
-Please report security issues privately, not through public issues or pull
-requests.
+Please report security problems privately, not in a public issue or pull request.
 
-- Preferred: open a private advisory at
-  https://github.com/LTplus-AG/ifc-lite/security/advisories/new
-- Or email louis@lt.plus
+Open a private report at https://github.com/BIMvoice/ifcsheet/security/advisories/new
 
-Include a description, the affected surface (viewer, kernel, CLI, server, or a
-package), and a minimal reproduction if you have one. We aim to acknowledge a
-report within a few business days.
+Say what is affected, and add the smallest example that shows it. Do not attach a real project model: a small made-up file is enough and is safer for you.
 
-ifc-lite runs untrusted IFC input through a parser and a geometry kernel, so
-parser and kernel crashes, out-of-bounds reads, and unbounded memory or time on
-crafted input are in scope. Please do not include confidential or
-client-identifying model data in a report; a minimal synthetic reproduction is
-strongly preferred.
+IfcSheet reads IFC files that may come from anyone, so a file that crashes the app, makes it hang or makes it use unbounded memory is in scope. So is anything that would send a user's model or drawing off their machine.
 
-## Supported versions
+If the problem is in parsing, geometry or rendering, it is likely in the engine underneath, [ifc-lite](https://github.com/LTplus-AG/ifc-lite). Report it to us first; we will pass it on with you, or you can report it there as well.
 
-Security fixes target the latest released version on the default branch. Older
-versions are not maintained.
+## Which version
+
+Fixes go into the current `main`. Older states are not maintained.

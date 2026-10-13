@@ -1,27 +1,16 @@
-# Agent Guidelines: ifc-lite
+# Agent guidelines: IfcSheet
 
-Project-specific gotchas and guardrails: the things that bite you *here* and that you can't infer from the code. Generic good practice is assumed, not repeated. This file is the single source of truth; `CLAUDE.md` and `.cursorrules` just point here.
+How we choose work, what "done" means and the rules of the product are in [CONTRIBUTING.md](CONTRIBUTING.md). Read that first. It applies to people and to AI agents alike.
 
-## What this is
-Browser-first IFC toolkit: a WebGPU web viewer plus a headless CLI/MCP/server. No first-party desktop app. Domain logic (decode, geometry, styling, export) lives in Rust crates under `rust/*` and is the source of truth for the server, CLI, SDK, and wasm; TypeScript packages under `packages/*` and apps under `apps/*` consume it (TS mostly does GPU upload and UI). Architecture docs: `docs/architecture/overview.md`.
+In short: build what is on the list, one purpose per pull request, see it work in the running app and attach the screenshot, say what you did not check, and keep the logic in plain modules reachable by commands.
 
-## Accountability, and what a PR has to be able to answer
+Where the IfcSheet code lives: the drawing and documentation layer is in `apps/viewer/src` (`drafting/`, `project/`, `components/viewer/drafting/`, `components/viewer/sheets/`). The edition that turns modelling off is set in `apps/viewer/src/edition.ts`.
 
-Everything here is agent-written, including the maintainer's own commits, so there is no AI-disclosure rule and no point in one. What matters is not who typed the code, it is whether anyone can answer for it.
+To check a change: in `apps/viewer`, `TEST_PATTERN='<paths you touched>' pnpm test` and `pnpm typecheck`. The whole viewer suite takes over ten minutes, so run the part you touched.
 
-**Every PR has an accountable submitter, and the test is answering, not authorship.** When review asks a question, the submitter answers with evidence: a test, a run, a measurement, a model file that reproduces it. "The agent wrote it" is never an answer. "Here is the run that proves it" always is. You do not need to be able to write the code. You do need to be able to demonstrate what it does. Unanswered questions block the merge.
+## Engine notes
 
-**A PR claiming user-visible behaviour shows that behaviour.** Not "should work". For this repo that usually means a real IFC model from a real authoring tool, an oracle run, or a viewer screenshot: ground truth an agent cannot fabricate, and the contribution it cannot make. Supplying one is worth more than another sweep.
-
-## Work selection
-
-**Default lane: a PR closes an issue carrying the `ready` label.** `ready` means the maintainer has decided it is in scope, wanted now, and scoped. `scripts/check-issue-queue.mjs` checks this and **prints its own mode**; read that line, not this one, because no prose here tracks a config key. The escape hatch is the `unqueued` label, applied by the maintainer.
-
-Filing issues is welcome and unrestricted: an audit producing twenty good issue reports is a real contribution. Filing is not claiming, and an unlabelled issue is not a work item.
-
-**One defect class per issue, one issue per PR.** A defect class found once and paid for N times is N review contexts for one decision: nine separate PRs once landed one state-reset class, one call site at a time. Fix the class. Above roughly 1,500 changed lines, stack PRs against the same issue rather than shipping one unreviewable diff.
-
-**A sweep needs a charter.** Audit-driven work is valuable and not discouraged, but it has no natural stopping point, so it needs an issue naming one: what is swept, and what ends it. Approved once, instead of adjudicated per PR.
+The sections below are the technical notes of the engine IfcSheet is built on, [ifc-lite](https://github.com/LTplus-AG/ifc-lite), kept here because the code refers to them by section name. They describe how the engine's code behaves. Where they mention that project's own process (issue labels, review bots, release steps), that process is theirs, not ours.
 
 ## Commands
 - Install: `corepack enable && pnpm install`.
@@ -200,78 +189,8 @@ allowlist is `scripts/refwalk-guard-allowlist.txt` and is empty.
 - Elements carrying `data-tour` are interactive-tour anchors. If you move, rename, or delete one, update `apps/viewer/src/lib/tours/anchors.ts` and the referencing steps under `apps/viewer/src/lib/tours/tours/` in the same PR. An anchor no component renders fails `anchors.contract.test.ts`; one unmounted when its step runs auto-skips and fires a `tour_step_broken` PostHog event. Tour telemetry (`lib/tours/telemetry.ts`) carries only registry ids, enums, and numbers, never file or model names (scrub-safe).
 - The tour demo kit reuses the committed `building-architecture.ifc` sample as its base; its variants (`building-architecture-rev-b.ifc`, `building-architecture.ids`, `demo-kit.json`) are derived from that base by `tools/demo-kit/derive-variants.mts`. Revision B preserves the base's GlobalIds (diff matches on GlobalId, so a regenerated base would make compare read as 100% added/deleted) and carries the injected clash. Never hand-edit or regenerate one artifact in isolation; rerun the derivation script, which self-verifies the IDS/clash/diff invariants.
 
-## This repository is public
-- Everything here is world-readable the moment it is pushed: code, docs, comments, commit messages, PR titles and bodies, changesets, issue text. Write as if a competitor and a client are both reading, because they are.
-- Never name a client, customer, prospect, or partner organisation, and never describe a commercial relationship (engagement, contract, statement of work, pricing, fee, or the intent to convert one into another). Use a generic segment instead: "an AEC design platform", "a desktop authoring client", "an enterprise buyer".
-- The same rule applies to anything a named party would consider non-public: their customer base or buyer profile, internal or unreleased API schemas, unreleased product plans, architecture they have not published, and any data they supplied.
-- This binds commit messages and PR text as much as file contents. A commit that removes a client name but explains itself by naming the client has published it again.
-- Roadmap, strategy and ecosystem docs are the usual offenders, because naming a real partner feels like it makes the argument concrete. It does not; the generic segment carries the same argument. If a claim only works with the real name attached, it belongs in a private repo.
-- If you find such a reference, remove it and say so without repeating it. Removing it from the working tree stops further publication but does not erase git history, so flag it rather than assuming the fix is complete.
-
 ## New source files
 - MPL-2.0 header on every new file: see [`./LICENSE_HEADER.md`](./LICENSE_HEADER.md).
-
-## Claiming work
-
-**Respect assignments, and assign yourself before you start.** This is not etiquette, it is the mechanism that stops two people building the same thing.
-
-Before touching an issue:
-
-1. `gh issue view <n> --json assignees,title` — **if someone else is assigned, it is theirs.** See "Helping on someone else's issue" below for the two ways that changes.
-2. Look for an open PR on it. `gh pr list --search "<n>"` is a TEXT search: it
-   matches comment bodies, so it both misses linked PRs that never mention the
-   number and returns unrelated ones that happen to contain it. Treat a hit as a
-   reason to look, not as an answer, and confirm by opening the PR. The linked-PR
-   list on the issue page is authoritative where the two disagree.
-3. If both are clear, `gh issue edit <n> --add-assignee <you>` **before** writing code, not when you open the PR. An assignment made at PR time claims nothing; the window it needed to cover has already closed.
-
-Check again immediately before opening the PR. A claim can appear while you work, and the second check is the cheap one.
-
-### Every agent is the same GitHub account
-
-`gh issue edit --add-assignee` cannot tell two agents apart: they all push and assign as the **same account**. An assignment to that account means *somebody* claimed this. It does not mean *you* did, and the field cannot tell you which. So treat it as a claim by someone else until you can show otherwise, and **leave a claim comment naming the session**, which is the only artifact that can:
-
-    gh issue comment <n> --body "Claiming this. Session <id>, branch <name>."
-
-If the account is assigned with no claim comment, ask on the issue rather than reading the field as your own. This applies to OUR sessions only. An outside contributor has their own account, so for them the field says what it appears to say.
-
-### The contributor check and the session check are different checks
-
-Doing one does not do the other. Run both, every time:
-
-    gh issue view <n> --json assignees      # is one of us on it
-    gh pr list --search "<n>"               # CANDIDATES; confirm on the issue page
-
-That search is TEXT: it misses linked PRs that never name the number and returns
-unrelated ones that do. A hit is a reason to look, not an answer; the issue's
-linked-PR list is authoritative where they disagree.
-
-On #3012 the account was self-assigned and a PR appeared 47 minutes later. That looked like a session ignoring the claim; it was an outside contributor, who has no reason to know about an internal assignment. No assignee field would have helped, because no session held it. Only the PR search would have.
-
-### When you collide mid-flight
-
-The expensive case is that both of you are already half-built when the claim appears. **The session named in the earliest claim comment decides. The other stops immediately** and hands over what it has as a comment or a patch on that session's PR. "The assignee decides" cannot work here, because the field holds one shared account and cannot name a session.
-
-**An outside contributor's PR takes precedence over any internal claim, however early.** They cannot see our claims and are not bound by them. Stopping mid-build is cheap; two finished implementations of the same thing is not.
-
-### Helping on someone else's issue
-
-Helping is welcome. **Taking over is not.** Two things make it help: they accepted an offer (silence is not a yes), or it has gone quiet (no commits, no word, about a week; even then comment first and wait a couple of days).
-
-Help, no permission needed: reviewing their PR including finding real defects; diagnosing a failing check and posting the cause; answering a question they asked; reporting a defect in shipped code even if their PR introduced it.
-
-Not help, however good the code: building a parallel implementation and announcing it afterwards; carrying an unraised branch that duplicates their work; pushing to their branch; opening a competing PR on their issue.
-
-If you built something before noticing, say so plainly, hand it over, and let them decide. That is recoverable; landing it is not. When you find you have duplicated someone, the owner follows the rules above in
-order: an outside contributor's PR beats any internal claim; else the earliest
-claim comment wins; the assignee field decides only when neither applies, since it
-cannot name a session. Never whoever is further along or noticed first. Do not
-close the duplicate silently: enumerate what it holds that the survivor does not,
-and never push to a branch you do not own to "help".
-
-This rule exists because it was broken twice in two days against the same external contributor (#2951 filed, assigned and implemented by them as #2952, with #2970 arriving fifteen hours later doing the same thing; and #2670, where they were mid-development when told a parallel implementation existed). The cost is not the wasted effort. It is that a contributor who did everything correctly had to be the one to raise it, twice.
-
-Applies to every agent and every session, including short-lived subagents.
 
 ## Per-package notes
 This root file is the shared contract; the closest `AGENTS.md` to an edited file also applies. Package-specific gotchas live in code-adjacent files: [`apps/viewer/AGENTS.md`](./apps/viewer/AGENTS.md), [`rust/AGENTS.md`](./rust/AGENTS.md), [`packages/geometry/AGENTS.md`](./packages/geometry/AGENTS.md), [`packages/collab/AGENTS.md`](./packages/collab/AGENTS.md), [`packages/collab-server/AGENTS.md`](./packages/collab-server/AGENTS.md). Add more as a package accumulates its own footguns.
