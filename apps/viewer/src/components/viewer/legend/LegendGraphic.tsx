@@ -13,15 +13,12 @@ import { memo, useMemo } from 'react';
 import type { LegendConfig, ProjectLegend } from '@/catalogue/types';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { useViewerStore } from '@/store';
-import { fontFamily, DEFAULT_TEXT_STYLE } from '@/drafting/styles';
-import { parsePat } from '@/drafting/hatch/pattern';
-import { legendGroups, scopeViewIds, scopeViews, type LegendMaterial } from '@/legend/legend-data';
+import { fontFamily } from '@/drafting/styles';
 import { LEGEND_CATEGORIES } from '@/catalogue/types';
-import { layoutLegend, type LegendLabels, type LegendLayout, type LegendPrim } from '@/legend/legend-layout';
-import { drawingMaterialNames } from '@/project/material-resolver';
-import { materialGraphics, materialNamesInModels } from '@/project/materials';
+import type { LegendLabels, LegendLayout, LegendPrim } from '@/legend/legend-layout';
+import { layoutOf, type LegendEnv } from '@/legend/legend-env';
 import { useProjectStore } from '@/project/project-store';
-import { EMPTY_VIEW_DRAWING, useViewDrawings } from '@/project/view-drawings';
+import { useViewDrawings } from '@/project/view-drawings';
 import type { ProjectSheet } from '@/project/types';
 import { penTags } from '../sheets/dxf-tags';
 
@@ -34,20 +31,6 @@ export function useLegendLabels(): LegendLabels {
     membrane: t('legend.membrane'),
     sampleText: t('legend.sampleText'),
   }), [t]);
-}
-
-interface LegendEnv {
-  labels: LegendLabels;
-  views: ReturnType<typeof useProjectStore.getState>['views'];
-  sheets: ProjectSheet[];
-  drafts: ReturnType<typeof useProjectStore.getState>['drafts'];
-  layers: ReturnType<typeof useProjectStore.getState>['draftLayers'];
-  table: ReturnType<typeof useProjectStore.getState>['materials'];
-  annotationTypes: ReturnType<typeof useProjectStore.getState>['annotationTypes'];
-  symbols: ReturnType<typeof useProjectStore.getState>['symbols'];
-  patterns: string;
-  textStyles: ReturnType<typeof useProjectStore.getState>['textStyles'];
-  byView: ReturnType<typeof useViewDrawings.getState>['byView'];
 }
 
 /** Everything a legend lists, as of now; a new object whenever any of it changes. */
@@ -72,19 +55,6 @@ function useLegendEnv(): LegendEnv {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [labels, views, sheets, drafts, layers, table, annotationTypes, symbols, patterns, textStyles, byView, models, mutationVersion],
   );
-}
-
-function layoutOf(legend: LegendConfig, env: LegendEnv, placedOn?: string): LegendLayout {
-  const ids = scopeViewIds(legend, env.sheets, placedOn);
-  const inScope = ids === null ? env.drafts : env.drafts.filter((d) => ids.has(d.viewId));
-  const names = ids === null
-    ? materialNamesInModels()
-    : [...new Set(scopeViews(legend, env.views, env.sheets, placedOn).flatMap((v) => drawingMaterialNames((env.byView[v.id] ?? EMPTY_VIEW_DRAWING).drawing)))];
-  const materials: LegendMaterial[] = names.map((n) => materialGraphics(n, env.table ?? []));
-  const hidden = legend.scope === 'view' && legend.scopeId ? new Set(env.views.find((v) => v.id === legend.scopeId)?.hiddenLayers ?? []) : undefined;
-  const groups = legendGroups(legend, { materials, layers: env.layers, drafts: inScope, hiddenLayers: hidden, annotationTypes: env.annotationTypes ?? [], symbols: env.symbols ?? [] });
-  const textStyle = (env.textStyles ?? []).find((s) => s.id === legend.textStyle) ?? DEFAULT_TEXT_STYLE;
-  return layoutLegend(groups, legend, { textStyle, patterns: parsePat(env.patterns).patterns, labels: env.labels });
 }
 
 /** The layout of a legend now. `placedOn` is the sheet a placed legend sits on (what a sheet-scoped legend with no sheet of its own follows). */

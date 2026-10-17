@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { downloadFile, sanitizeFilename } from '@/lib/export/download';
 import { LEGEND_CATEGORIES, type LegendCategory, type ProjectLegend } from '@/catalogue/types';
-import { updateLegend } from '@/legend/legend-actions';
+import { moveLegendCategory, toggleLegendCategory, updateLegend } from '@/legend/legend-actions';
 import { useProjectStore } from '@/project/project-store';
 import { svgToDxf } from '../sheets/sheet-dxf';
 import { LegendGraphic, useLegendLayout } from './LegendGraphic';
@@ -48,12 +48,8 @@ export function LegendSettings({ legend }: { legend: ProjectLegend }) {
   const sheets = useProjectStore((s) => s.sheets);
   const textStyles = useProjectStore((s) => s.textStyles) ?? [];
   const set = (patch: Partial<ProjectLegend>) => updateLegend(legend.id, patch);
-  const move = (i: number, by: -1 | 1) => {
-    const list = [...legend.categories];
-    [list[i], list[i + by]] = [list[i + by], list[i]];
-    set({ categories: list });
-  };
-  const toggle = (c: LegendCategory) => set({ categories: legend.categories.includes(c) ? legend.categories.filter((x) => x !== c) : [...legend.categories, c] });
+  const move = (i: number, by: -1 | 1) => moveLegendCategory(legend.id, i, by);
+  const toggle = (c: LegendCategory) => toggleLegendCategory(legend.id, c);
   const hidden = LEGEND_CATEGORIES.filter((c) => !legend.categories.includes(c));
   return (
     <aside className="w-80 shrink-0 space-y-1 overflow-y-auto border-l border-zinc-200 p-3 text-xs dark:border-zinc-800" aria-label={t('legend.folder')}>

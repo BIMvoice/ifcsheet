@@ -214,7 +214,8 @@ export function removeProjectItem(id: string): void {
   const state = useProjectStore.getState();
   useProjectStore.setState({
     views: state.views.filter((v) => v.id !== id),
-    sheets: state.sheets.filter((s) => s.id !== id),
+    // A deleted legend leaves the sheets it was placed on.
+    sheets: state.sheets.filter((s) => s.id !== id).map((s) => (state.legends?.some((l) => l.id === id) && s.viewports?.some((vp) => vp.viewId === id) ? { ...s, viewports: s.viewports.filter((vp) => vp.viewId !== id) } : s)),
     schedules: (state.schedules ?? []).filter((s) => s.id !== id),
     civilDrawings: (state.civilDrawings ?? []).filter((d) => d.id !== id),
     legends: (state.legends ?? []).filter((l) => l.id !== id),

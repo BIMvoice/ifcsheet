@@ -4,8 +4,8 @@
 
 /**
  * The project, in IfcSheet's own terms: a drawer over the left of the Wall
- * listing the sheets (by series), the drawings (plans, sections, elevations)
- * and the schedules. A click goes there: a sheet is stepped into, a drawing
+ * listing the sheets (by series), the drawings (plans, sections, elevations),
+ * the schedules and the legends. A click goes there: a sheet is stepped into, a drawing
  * is brought forward on the sheet it hangs on (hung first if it is not), a
  * schedule likewise. Double-click renames, the cross deletes. New, open and
  * save the project file are at the top; the title block every sheet prints
@@ -16,7 +16,7 @@ import { useRef, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { sheetGroup, type ModelExtent } from '@/project/drawing-set';
-import { addScheduleToSet, hangSchedule, hangView } from '@/project/drawing-set-actions';
+import { addScheduleToSet, hangLegend, hangSchedule, hangView } from '@/project/drawing-set-actions';
 import { requestNewProject } from '@/project/new-project';
 import { exportProjectFile, importProjectFile, PROJECT_FILE_SUFFIX } from '@/project/project-file';
 import { addProjectSheet, loadProjectDocument, projectDocument, removeProjectItem, renameProjectItem, setSheetNumber, useProjectStore } from '@/project/project-store';
@@ -25,6 +25,7 @@ import type { ProjectViewKind } from '@/project/types';
 import { TitleBlockForm } from './TitleBlockForm';
 import { stepInto } from './wall-nav';
 import { LibraryPanel } from './LibraryPanel';
+import { LegendsAdd } from './LegendsAdd';
 
 const DRAWING_KINDS: { kind: Exclude<ProjectViewKind, '3d'>; labelKey: TranslationKey }[] = [
   { kind: 'plan', labelKey: 'wall.group.plans' },
@@ -85,6 +86,7 @@ export function ProjectDrawer({ extent, onClose }: { extent: ModelExtent | null;
   const sheets = useProjectStore((s) => s.sheets);
   const views = useProjectStore((s) => s.views);
   const schedules = useProjectStore((s) => s.schedules ?? []);
+  const legends = useProjectStore((s) => s.legends ?? []);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const go = (sheetId: string | null, focus: string | null = null): void => {
@@ -160,6 +162,11 @@ export function ProjectDrawer({ extent, onClose }: { extent: ModelExtent | null;
         >
           {schedules.map((s) => <Row key={s.id} id={s.id} label={s.name} onOpen={() => go(hangSchedule(s.id))} />)}
         </Group>
+        <div data-owns-keys>
+          <Group title={t('wall.group.legends')} add={<LegendsAdd onClose={onClose} />}>
+            {legends.map((l) => <Row key={l.id} id={l.id} label={l.name} onOpen={() => go(sheetsShowing(l.id)[0]?.id ?? hangLegend(l.id))} />)}
+          </Group>
+        </div>
       </div>
     </aside>
   );

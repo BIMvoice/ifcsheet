@@ -242,6 +242,20 @@ export function hangView(viewId: string, extent: ModelExtent): string | null {
   return hung.sheetId;
 }
 
+/** Hang a schedule or a legend on a sheet of its own in the A-6xx series: `itemId` centred in the drawing area, the sheet named `name`. */
+function hangOnSheetOfItsOwn(itemId: string, name: string): string {
+  const { sheets } = useProjectStore.getState();
+  const placed = sheets.find((s) => (s.viewports ?? []).some((vp) => vp.viewId === itemId));
+  if (placed) return placed.id;
+  const area = drawingArea(SET_PAPER);
+  const sheet: ProjectSheet = {
+    id: freshProjectId('sheet'), number: nextInSeries(sheets, 'schedules'), name, createdAt: Date.now(), paper: SET_PAPER, orientation: 'landscape',
+    viewports: [{ id: freshProjectId('viewport'), viewId: itemId, x: area.x + area.w / 2, y: area.y + area.h / 2, scale: 50, width: 0, height: 0, center: null }],
+  };
+  useProjectStore.setState({ sheets: [...sheets, sheet], dirty: true });
+  return sheet.id;
+}
+
 /**
  * Hang a schedule (doors and windows, or the material takeoff) on a sheet of
  * its own in the A-6xx series, its table centred in the drawing area, named
@@ -249,18 +263,14 @@ export function hangView(viewId: string, extent: ModelExtent): string | null {
  * that sheet.
  */
 export function hangSchedule(scheduleId: string): string | null {
-  const { sheets, schedules } = useProjectStore.getState();
-  const schedule = schedules?.find((s) => s.id === scheduleId);
-  if (!schedule) return null;
-  const placed = sheets.find((s) => (s.viewports ?? []).some((vp) => vp.viewId === scheduleId));
-  if (placed) return placed.id;
-  const area = drawingArea(SET_PAPER);
-  const sheet: ProjectSheet = {
-    id: freshProjectId('sheet'), number: nextInSeries(sheets, 'schedules'), name: schedule.name, createdAt: Date.now(), paper: SET_PAPER, orientation: 'landscape',
-    viewports: [{ id: freshProjectId('viewport'), viewId: scheduleId, x: area.x + area.w / 2, y: area.y + area.h / 2, scale: 50, width: 0, height: 0, center: null }],
-  };
-  useProjectStore.setState({ sheets: [...sheets, sheet], dirty: true });
-  return sheet.id;
+  const schedule = useProjectStore.getState().schedules?.find((s) => s.id === scheduleId);
+  return schedule ? hangOnSheetOfItsOwn(scheduleId, schedule.name) : null;
+}
+
+/** Hang a legend the same way (`hangSchedule`); a legend already on a sheet returns that sheet. */
+export function hangLegend(legendId: string): string | null {
+  const legend = useProjectStore.getState().legends?.find((l) => l.id === legendId);
+  return legend ? hangOnSheetOfItsOwn(legendId, legend.name) : null;
 }
 
 /** A new schedule hung on the set (`hangSchedule`); returns its sheet. */
