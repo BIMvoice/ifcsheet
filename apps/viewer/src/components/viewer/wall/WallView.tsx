@@ -22,6 +22,9 @@ import { EVENT_WALL_HUNG, emitWallHung } from '@/lib/tours/events';
 import { SteppedSheet } from './SteppedSheet';
 import { WallGrid } from './WallGrid';
 import { WallIntro } from './WallIntro';
+import { WallWaiting } from './WallWaiting';
+import { isScanOnly } from '@/scan/scan-points';
+import { resetScanState, startScanDrawingSet, useScanState } from '@/scan/scan-start';
 import { openDemoModel } from '../ifcsheet/demo-model';
 import { ProjectDrawer } from './ProjectDrawer';
 import { IssuePanel, MissingPanel } from './SetPanels';
@@ -37,7 +40,11 @@ export function WallView() {
   const views = useProjectStore((s) => s.views);
   const levels = useProjectStore((s) => s.levels);
   // Measured on the building, not on the site around it; the main body of the model when no storey holds geometry.
-  const extent = useMemo(() => setExtent(levels, meshes, mergedSectionBounds(models, legacy)).extent, [levels, meshes, models, legacy]);
+  const modelExtent = useMemo(() => setExtent(levels, meshes, mergedSectionBounds(models, legacy)).extent, [levels, meshes, models, legacy]);
+  // Scans and nothing else (#181): no meshes, so the extent is the scan's, once its points are gathered.
+  const scanOnly = isScanOnly(models, meshes?.length ?? 0);
+  const scanBounds = useScanState((s) => s.bounds);
+  const extent = modelExtent ?? (scanOnly ? scanBounds : null);
   const [intro, setIntro] = useState(false);
   const { stepped, focus, visit, drawer, panel } = useWallNav();
 
@@ -46,6 +53,14 @@ export function WallView() {
   useEffect(() => {
     if (!hasSet && meshes && meshes.length > 0 && startDrawingSet(meshes, extent)) setIntro(true);
   }, [hasSet, meshes, extent]);
+  useEffect(() => {
+    if (!scanOnly) {
+      resetScanState();
+      return;
+    }
+    // Gathered on any open, so a saved set reopened has its extent; laid out only on a project with no set (again when every set sheet is removed, as for a model).
+    void startScanDrawingSet(models).then((started) => { if (started) setIntro(true); });
+  }, [scanOnly, models, hasSet]);
 
   // The proposals read the lowest plan's rooms; they change only with the model or the plans.
   const proposals = useMemo(() => sectionProposals(meshes, extent), [meshes, extent, views]);
@@ -70,9 +85,9 @@ export function WallView() {
           </button>
         </div>
       ) : sheets.length === 0 ? (
-        <div className="flex h-full items-center justify-center text-lg text-sky-200/80">{t('wall.intro.waiting')}</div>
+        <WallWaiting scan={scanOnly} />
       ) : intro && extent ? (
-        <WallIntro modelName={modelName} extent={extent} onHang={hang} />
+        <WallIntro modelName={modelName} extent={extent} onHang={hang} scan={scanOnly} />
       ) : steppedSheet ? (
         <SteppedSheet key={`${steppedSheet.id}:${visit}`} sheet={steppedSheet} extent={extent} proposals={proposals} initialFocus={focus} onBack={back} onStep={(id) => stepInto(id)} />
       ) : (

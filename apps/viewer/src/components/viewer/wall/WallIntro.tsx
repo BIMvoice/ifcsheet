@@ -21,10 +21,11 @@ function Chip({ children }: { children: string }) {
   return <span className="rounded-full border border-sky-300/30 px-4 py-1.5 text-sm text-sky-100">{children}</span>;
 }
 
-export function WallIntro({ modelName, extent, onHang }: { modelName: string; extent: ModelExtent; onHang: () => void }) {
+export function WallIntro({ modelName, extent, onHang, scan = false }: { modelName: string; extent: ModelExtent; onHang: () => void; scan?: boolean }) {
   const { t, locale } = useTranslation();
   const sheets = useProjectStore((s) => s.sheets);
   const levels = useProjectStore((s) => s.levels);
+  const scanLevels = useProjectStore((s) => s.scanLevels);
   const views = new Set(sheets.flatMap((s) => (s.viewports ?? []).map((v) => v.viewId))).size;
   const w = formatLocaleFixed(locale, extent.max.x - extent.min.x, 1);
   const d = formatLocaleFixed(locale, extent.max.z - extent.min.z, 1);
@@ -49,14 +50,15 @@ export function WallIntro({ modelName, extent, onHang }: { modelName: string; ex
           <br />
           <span className="text-sky-400">{t('wall.intro.titleEnd')}</span>
         </h1>
-        <p className="mt-6 max-w-lg text-lg leading-relaxed text-sky-100/80">{t('wall.intro.body', { views, sheets: sheets.length })}</p>
+        <p className="mt-6 max-w-lg text-lg leading-relaxed text-sky-100/80">{t(scan ? 'wall.scan.intro.body' : 'wall.intro.body', { views, sheets: sheets.length })}</p>
         <div className="mt-6 flex flex-wrap gap-2">
-          <Chip>{t('wall.intro.storeys', { count: levels.length })}</Chip>
+          <Chip>{scan ? t('wall.scan.intro.levels', { count: scanLevels?.length ?? 0 }) : t('wall.intro.storeys', { count: levels.length })}</Chip>
           <Chip>{t('wall.intro.extent', { w, d })}</Chip>
           <Chip>{t('wall.intro.sheets', { count: sheets.length })}</Chip>
           <Chip>{t('wall.intro.views', { count: views })}</Chip>
         </div>
-        <div className="mt-6 max-w-lg"><ReadinessList skin={WALL_SKIN} compact /></div>
+        {/* What a model is missing for its set (storeys, rooms, materials) is not what a scan lacks: the body says that. */}
+        {scan ? null : <div className="mt-6 max-w-lg"><ReadinessList skin={WALL_SKIN} compact /></div>}
         <button type="button" {...tourAnchor(TOUR_ANCHORS.wallHang)} onClick={onHang} className="mt-10 inline-flex items-center gap-3 rounded-md bg-sky-600 px-6 py-3 text-lg text-white hover:bg-sky-500">
           {t('wall.intro.hang')} <ArrowRight className="size-5" />
         </button>

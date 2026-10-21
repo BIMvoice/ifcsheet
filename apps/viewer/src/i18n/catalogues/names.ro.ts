@@ -24,4 +24,7 @@ export const namesRo = {
   'names.view.west': 'Fațada vest',
   'names.view.section': 'Secțiunea {mark}-{mark}',
   'names.view.detail': 'Detaliu {number} - {source}',
+  'names.scan.level': 'Nivelul {n}',
+  'names.scan.sectionAlongX': 'Prin scanare, de la vest la est',
+  'names.scan.sectionAlongZ': 'Prin scanare, de la nord la sud',
 } as const satisfies Partial<Record<TranslationKey, TranslationValue>>;

@@ -8,6 +8,7 @@ import type { TitleBlockTemplate } from './title-block-template';
 import type { ModelSnapshot } from '@/whatchanged/snapshot';
 import type { PhaseSource } from './phases';
 import type { UrbanSettings } from '@/urban/indicators';
+import type { ScanLevel } from '@/scan/scan-levels';
 import type { JoineryMapping } from '@/joinery/symbol-mapping';
 import type { JoinerySpec, StructureProfile } from '@ifc-lite/create';
 import type { ElementTypeKind, ElementTypeSpec } from '@/element-types/spec';
@@ -108,6 +109,8 @@ export interface ProjectDocument extends EngineDocument {
   siteArea?: number;
   /** The urban indicators' terrain level, ±0.00 and the storeys left out of Ad for CUT (`urban/indicators.ts`). */
   urbanSettings?: UrbanSettings;
+  /** A scan's levels as the user set them (name and floor height, drawing frame); its plans cut above them (`scan/`). Absent: no scan was drawn. */
+  scanLevels?: ScanLevel[];
   /** The project's structure profile library (retaining walls, tunnels, decks, barriers… and drawn shapes). */
   structureProfiles?: StructureProfile[];
   /** Road drawings: longitudinal profiles and cross-section sets. */

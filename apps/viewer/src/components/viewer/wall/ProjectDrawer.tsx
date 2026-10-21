@@ -17,7 +17,7 @@ import { X } from 'lucide-react';
 import { toast } from '@/components/ui/toast';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { inSetOrder } from '@/project/drawing-register';
-import { sheetGroup, type ModelExtent } from '@/project/drawing-set';
+import type { ModelExtent } from '@/project/drawing-set';
 import { addRegisterToSet, addScheduleToSet, hangLegend, hangSchedule, hangView } from '@/project/drawing-set-actions';
 import { projectOpenErrorText } from '@/project/open-error';
 import { requestNewProject } from '@/project/new-project';
@@ -43,6 +43,7 @@ import { LegendsAdd } from './LegendsAdd';
 import { SiteAreaField } from '../urban/SiteAreaField';
 import { ViewportState } from './ViewportState';
 import { TagFieldsPanel } from './TagFieldsPanel';
+import { ScanLevelsCard } from './ScanLevelsCard';
 
 const DRAWING_KINDS: { kind: Exclude<ProjectViewKind, '3d'>; labelKey: TranslationKey }[] = [
   { kind: 'plan', labelKey: 'wall.group.plans' },
@@ -106,6 +107,7 @@ export function ProjectDrawer({ extent, onClose }: { extent: ModelExtent | null;
   const views = useProjectStore((s) => s.views);
   const schedules = useProjectStore((s) => s.schedules ?? []);
   const legends = useProjectStore((s) => s.legends ?? []);
+  const scanLevels = useProjectStore((s) => s.scanLevels);
   const models = useViewerStore((s) => s.models);
   // models: what `modelSiteArea` reads.
   const siteFromModel = useMemo(() => modelSiteArea(), [models]);
@@ -179,6 +181,7 @@ export function ProjectDrawer({ extent, onClose }: { extent: ModelExtent | null;
           <TitleBlockForm />
         </details>
         <TagFieldsPanel />
+        {scanLevels?.length ? <ScanLevelsCard /> : null}
         {DRAWING_KINDS.map(({ kind, labelKey }) => (
           <Group key={kind} title={t(labelKey)}>
             {views.filter((v) => v.kind === kind).map((v) => <Row key={v.id} id={v.id} label={v.name} state={viewportState(byView[v.id], v.kind)} onOpen={() => openDrawing(v.id)} />)}

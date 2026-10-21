@@ -28,7 +28,9 @@ import { seedProjectTitleBlock } from './sheets';
 import { resolve } from '@/i18n/registry';
 import { DEFAULT_PLAN_CUT_HEIGHT_M, ELEVATION_DIRECTIONS, elevationName, freshProjectId, sameElevation } from './view-defaults';
 import { proposeSections, type SectionProposal } from './section-proposals';
-import type { ElevationDirection, PlanProjectView, ProjectLevel, ProjectSchedule, ProjectSheet, ProjectView, SectionProjectView, SheetTemplate, TemplateSeries } from './types';
+import { ensureScanPlans, ensureScanSections, isScanPlan } from './scan-set';
+import type { ScanLevel } from '@/scan/scan-levels';
+import type { PlanProjectView, ProjectLevel, ProjectSchedule, ProjectSheet, ProjectView, SectionProjectView, SheetTemplate, TemplateSeries } from './types';
 
 // The lowest plan lives with the set's pure layout (`drawing-set.ts`), so the drafting marks can read it without this module's store.
 export { groundPlan } from './drawing-set';
@@ -77,13 +79,13 @@ export function sectionForProposal(proposal: SectionProposal): string | null {
  * interior elevations, made first, do not count). Returns whether it did; a
  * project with set sheets is never touched.
  */
-export function startDrawingSet(meshes: MeshData[] | null, bounds: AxisBounds | null): boolean {
+export function startDrawingSet(meshes: MeshData[] | null, bounds: AxisBounds | null, options: Omit<EnsureOptions, 'onOpen'> = {}): boolean {
   if (!bounds || useProjectStore.getState().sheets.some(isSetSheet)) return false;
   // A project still carrying the untouched English default name takes the active language's, once, as it is started.
   const { name, dirty } = useProjectStore.getState();
   const untitled = resolve('names.project.untitled');
   if (!dirty && name === EMPTY_PROJECT.name && untitled !== name) useProjectStore.setState({ name: untitled });
-  return ensureDrawingSet(meshes, bounds, { onOpen: true }).sheetsAdded > 0;
+  return ensureDrawingSet(meshes, bounds, { ...options, onOpen: true }).sheetsAdded > 0;
 }
 
 // ---- Make the set whole (the one planner behind the Wall's start and DRAFTSET) ----
@@ -110,6 +112,8 @@ export interface EnsureReport {
 export interface EnsureOptions {
   /** On open: a project that already has sections is not given proposed ones. */
   onOpen?: boolean;
+  /** A scan, not a model (#181): plans at its levels and sections across it (`scan-set.ts`), no elevations. */
+  scan?: { levels: readonly ScanLevel[]; centre?: { x: number; z: number } | null };
 }
 
 
@@ -179,9 +183,9 @@ function ensurePlanScales(extent: AxisBounds): void {
 }
 
 /** Every drawing not on a sheet yet, hung where it belongs. */
-function ensureSheets(extent: AxisBounds, report: EnsureReport): void {
+function ensureSheets(extent: AxisBounds, report: EnsureReport, hangs: (view: ProjectView) => boolean = () => true): void {
   const hung = new Set(state().sheets.flatMap((s) => (s.viewports ?? []).map((vp) => vp.viewId)));
-  const loose = state().views.filter((v) => !hung.has(v.id));
+  const loose = state().views.filter((v) => !hung.has(v.id) && hangs(v));
   const before = state().sheets;
   report.sheetsExisting = before.length;
   let sheets = before;
@@ -212,6 +216,15 @@ function ensureSheets(extent: AxisBounds, report: EnsureReport): void {
 export function ensureDrawingSet(meshes: MeshData[] | null, extent: AxisBounds, options: EnsureOptions = {}): EnsureReport {
   const report: EnsureReport = { viewsAdded: 0, viewsExisting: 0, sheetsAdded: 0, sheetsExisting: 0, addedSheetNumbers: [], notes: [] };
   runAsOneUndoStep(() => {
+    if (options.scan) {
+      const plans = ensureScanPlans(options.scan.levels);
+      const sections = ensureScanSections(options.scan.levels, extent, options.onOpen === true, options.scan.centre);
+      report.viewsAdded += plans.added.length + sections.added;
+      report.viewsExisting += plans.existing + sections.existing;
+      ensurePlanScales(extent);
+      ensureSheets(extent, report, (v) => isScanPlan(v) || v.kind === 'section');
+      return;
+    }
     ensurePlans(extent, report);
     ensureElevations(extent, report);
     ensurePlanScales(extent);

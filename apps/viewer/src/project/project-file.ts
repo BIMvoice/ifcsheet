@@ -256,6 +256,7 @@ export function parseProjectFile(text: string, schema: ProjectFileSchema = THIS_
     ...(raw.modelState !== undefined ? { modelState: readSnapshot(raw.modelState, '/modelState') } : {}),
     ...(typeof raw.siteArea === 'number' && Number.isFinite(raw.siteArea) && raw.siteArea > 0 ? { siteArea: raw.siteArea } : {}),
     ...readUrbanSettings(raw.urbanSettings),
+    ...readScanLevels(raw.scanLevels),
   };
 }
 
@@ -273,6 +274,13 @@ function readUrbanSettings(raw: unknown): Pick<ProjectDocument, 'urbanSettings'>
   return Object.keys(out).length ? { urbanSettings: out } : {};
 }
 
+
+/** A scan's levels; a level without a name or a finite height is dropped. */
+function readScanLevels(raw: unknown): Pick<ProjectDocument, 'scanLevels'> {
+  if (!Array.isArray(raw)) return {};
+  const levels = raw.filter((l): l is { id: string; name: string; elevation: number } => isObject(l) && typeof l.id === 'string' && typeof l.name === 'string' && typeof l.elevation === 'number' && Number.isFinite(l.elevation));
+  return levels.length ? { scanLevels: levels.map(({ id, name, elevation }) => ({ id, name, elevation })) } : {};
+}
 
 /** `symbolFlips`: GlobalId → 1..3; anything else is dropped. */
 function readFlips(value: unknown): Record<string, number> {
