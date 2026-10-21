@@ -26,7 +26,7 @@ import { addProjectView, EMPTY_PROJECT, numberingScheme, updateProjectView, useP
 import { elevationDepth, elevationPlaneOffset, proposalDepth } from './set-defaults';
 import { seedProjectTitleBlock } from './sheets';
 import { resolve } from '@/i18n/registry';
-import { DEFAULT_PLAN_CUT_HEIGHT_M, ELEVATION_DIRECTIONS, elevationName, freshProjectId, sameElevation } from './view-defaults';
+import { ELEVATION_DIRECTIONS, elevationName, freshProjectId, planCutHeight, sameElevation } from './view-defaults';
 import { proposeSections, type SectionProposal } from './section-proposals';
 import type { ElevationDirection, PlanProjectView, ProjectLevel, ProjectSchedule, ProjectSheet, ProjectView, SectionProjectView, SheetTemplate, TemplateSeries } from './types';
 
@@ -113,7 +113,7 @@ export interface EnsureOptions {
 }
 
 
-/** One plan per storey that has none yet; a model with no storeys gets one cut at mid-height. */
+/** One plan per level (a storey, or one the person defined) that has none yet; a model with no levels gets one cut at mid-height. */
 function ensurePlans(extent: AxisBounds, report: EnsureReport): void {
   const levels: ProjectLevel[] = [];
   for (const level of [...state().levels].sort((a, b) => a.elevation - b.elevation)) {
@@ -123,7 +123,7 @@ function ensurePlans(extent: AxisBounds, report: EnsureReport): void {
     if (state().views.some((v) => v.kind === 'plan')) return;
     const height = Math.round(((extent.max.y - extent.min.y) / 2) * 10) / 10;
     report.notes.push({ key: 'draftSet.note.noStoreys', params: { height } });
-    addProjectView({ kind: 'plan', name: resolve('names.view.plan'), cutHeight: height, level: { name: resolve('names.view.plan'), elevation: extent.min.y, storeyGlobalIds: [] } });
+    addProjectView({ kind: 'plan', name: resolve('names.view.plan'), auto: true, cutHeight: height, level: { name: resolve('names.view.plan'), elevation: extent.min.y, storeyGlobalIds: [] } });
     report.viewsAdded++;
     return;
   }
@@ -132,7 +132,7 @@ function ensurePlans(extent: AxisBounds, report: EnsureReport): void {
       report.viewsExisting++;
       continue;
     }
-    addProjectView({ kind: 'plan', name: level.name, cutHeight: DEFAULT_PLAN_CUT_HEIGHT_M, level: { name: level.name, elevation: level.elevation, storeyGlobalIds: [...level.storeyGlobalIds] } });
+    addProjectView({ kind: 'plan', name: level.name, cutHeight: planCutHeight(level, levels), level: { name: level.name, elevation: level.elevation, storeyGlobalIds: [...level.storeyGlobalIds] } });
     report.viewsAdded++;
   }
 }

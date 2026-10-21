@@ -67,6 +67,18 @@ export interface ProjectLevel {
   floorY?: number;
 }
 
+/**
+ * A level the user defined for a model that has no storeys (a glTF/GLB): a name and the floor's height in the
+ * drawing frame, metres (the model's up axis). It becomes a {@link ProjectLevel} with no storey GlobalIds
+ * (`levelsWithUser`), and so a plan. Never read from the model, so it is saved with the project.
+ */
+export interface UserLevel {
+  id: string;
+  name: string;
+  /** Floor height, metres, in the frame the model is drawn in. */
+  elevation: number;
+}
+
 export interface ProjectViewBase {
   id: string;
   name: string;
@@ -286,4 +298,6 @@ export interface ProjectDocument {
   seriesTemplates?: Partial<Record<TemplateSeries, string>>;
   /** How sheets are numbered (`numbering.ts`); absent is the default A-101 style. */
   sheetNumbering?: NumberingScheme;
+  /** The levels the user defined for a model with no storeys; absent or empty: none (`UserLevel`). */
+  userLevels?: UserLevel[];
 }

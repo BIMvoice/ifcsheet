@@ -27,7 +27,7 @@ export type {
   ElevationDirection, ElevationProjectView, ElongatedPaper, GridEnds, GroupPattern, InteriorElevation, NumberGroup, NumberingScheme,
   Paper, PaperSize, PhaseId, PhaseStyle, PlanProjectView, ProjectDocument, ProjectionMode, ProjectLevel, ProjectModelRef, ProjectSheet,
   ProjectView, ProjectViewBase, ProjectViewKind, SectionCustomPlane, SectionPlaneAxis, SectionProjectPlane, SectionProjectView,
-  SheetFrame, SheetTemplate, SheetViewport, TemplateSeries, ThreeDProjection, ThreeDProjectView, TitleBlockPosition, ViewDetail,
+  SheetFrame, SheetTemplate, SheetViewport, TemplateSeries, ThreeDProjection, ThreeDProjectView, TitleBlockPosition, UserLevel, ViewDetail,
   ViewGraphics, ViewGridGraphics, ViewPhases, ViewRaster,
 } from './document.js';
 
@@ -45,7 +45,7 @@ export {
 } from './numbering.js';
 export { SHEET_SCALES, fitViewportBox, mmPerMetre, paperOf } from './viewport-fit.js';
 export {
-  DEFAULT_PLAN_CUT_HEIGHT_M, ELEVATION_DIRECTIONS, LEVEL_MATCH_TOLERANCE_M, defaultViews, elevationName, levelFloorY, levelsFromStoreys, planViewFor,
+  DEFAULT_PLAN_CUT_HEIGHT_M, ELEVATION_DIRECTIONS, LEVEL_MATCH_TOLERANCE_M, defaultViews, elevationName, levelFloorY, levelsFromStoreys, levelsWithUser, planCutHeight, planViewFor,
   resolvePlanLevel, sameElevation, syncDefaultViews, uniqueViewName, type StoreyInput,
 } from './view-defaults.js';
 export { DEPTH_MARGIN_M, ELEVATION_INSET_M, elevationDepth, elevationPlaneOffset, proposalDepth, type Extent3 } from './set-defaults.js';

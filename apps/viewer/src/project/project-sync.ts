@@ -42,11 +42,21 @@ export function storeysOf(ds: StoreySource | null | undefined): StoreyInput[] {
   }));
 }
 
+/**
+ * A model that is only meshes: a glTF/GLB, which has no IFC data store (the primary one keeps `null`). It has no
+ * storeys, but it is a model of the project all the same: it gets the default views (the 3D view among them), the
+ * levels the person defines for it, and an autosave slot. A LandXML or a point cloud is not this.
+ */
+export function isMeshOnlyModel(model: Pick<FederatedModel, 'ifcDataStore' | 'landXmlDocument' | 'geometryResult'>): boolean {
+  return !model.ifcDataStore && !model.landXmlDocument && (model.geometryResult?.meshes.length ?? 0) > 0;
+}
+
 export function modelRef(model: Pick<FederatedModel, 'id' | 'name' | 'sourceContentHash'>): ProjectModelRef {
   return { key: model.sourceContentHash ?? model.name, name: model.name };
 }
 
-function loadedModels(): { refs: ProjectModelRef[]; storeys: StoreyInput[] } {
+/** The project's models and the storeys they bring, as `useProjectSync` hands them to `syncProjectWithModels`. */
+export function loadedModels(): { refs: ProjectModelRef[]; storeys: StoreyInput[] } {
   const { models, ifcDataStore } = useViewerStore.getState();
   if (models.size === 0) {
     return ifcDataStore ? { refs: [{ key: 'legacy', name: 'Model' }], storeys: storeysOf(ifcDataStore) } : { refs: [], storeys: [] };
@@ -54,7 +64,7 @@ function loadedModels(): { refs: ProjectModelRef[]; storeys: StoreyInput[] } {
   const refs: ProjectModelRef[] = [];
   const storeys: StoreyInput[] = [];
   for (const model of models.values()) {
-    if (!model.ifcDataStore) continue;
+    if (!model.ifcDataStore && !isMeshOnlyModel(model)) continue;
     refs.push(modelRef(model));
     // Effective storeys: parsed ones not deleted, plus levels added in this session.
     storeys.push(...modelLevels(model.id));

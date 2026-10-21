@@ -30,7 +30,7 @@ import { liftTypedRevisions, sheetRevisions } from './revisions';
 import { carryIssueFingerprints } from './sheet-fingerprint';
 import { liftSheetTitleBlocks } from './title-block';
 import { warnUnknownGraphicStandard } from './graphic-standard-notice';
-import { defaultViews, freshProjectId, levelsFromStoreys, syncDefaultViews, uniqueViewName, type StoreyInput } from './view-defaults';
+import { defaultViews, freshProjectId, levelsWithUser, syncDefaultViews, uniqueViewName, type StoreyInput } from './view-defaults';
 import type { NewProjectView, ProjectViewPatch, ProjectDocument, ProjectLevel, ProjectModelRef, ProjectSheet, ProjectView, NumberGroup, NumberingScheme } from './types';
 import type { UrbanSettings } from '@/urban/indicators';
 
@@ -49,7 +49,7 @@ export const EMPTY_PROJECT: ProjectDocument = {
   name: 'Untitled project', models: [], views: [], sheets: [], titleBlock: {}, titleBlockSources: undefined, revisions: [], titleBlockParams: undefined, titleBlockTemplate: undefined, drafts: [], draftLayers: [{ ...DEFAULT_DRAFT_LAYER }], hatchPatterns: '', symbolFlips: {},
   textStyles: [{ ...DEFAULT_TEXT_STYLE }], dimStyles: [{ ...DEFAULT_DIM_STYLE }], layerGroups: [],
   joineryTypes: [], currentJoinery: {}, joineryMapping: { ...DEFAULT_JOINERY_MAPPING }, elementTypes: [], currentTypes: {}, schedules: [], structureProfiles: [], civilDrawings: [], typicalSections: [], materials: [], cadLayers: [], savedSectionCuts: [], sheetTemplates: [], seriesTemplates: {},
-  annotationTypes: [], symbols: [], legends: [], details: [], issues: [], comments: [], modelState: undefined, tagFields: undefined, sheetNumbering: undefined, phaseSource: undefined, graphicStandard: undefined, siteArea: undefined, urbanSettings: undefined,
+  annotationTypes: [], symbols: [], legends: [], details: [], issues: [], comments: [], modelState: undefined, tagFields: undefined, sheetNumbering: undefined, phaseSource: undefined, graphicStandard: undefined, siteArea: undefined, urbanSettings: undefined, userLevels: [],
 };
 
 export const useProjectStore = create<ProjectState>()(() => ({
@@ -86,6 +86,7 @@ const DOCUMENT_FIELDS = {
   revisions: true,
   siteArea: true,
   urbanSettings: true,
+  userLevels: true,
 } as const satisfies Record<keyof ProjectDocument, true>;
 
 /**
@@ -106,6 +107,7 @@ const DOCUMENT_DEFAULTS: { [K in keyof ProjectDocument]?: () => ProjectDocument[
   sheetTemplates: () => [], seriesTemplates: () => ({}),
   comments: () => [],
   revisions: () => [],
+  userLevels: () => [],
 };
 
 /** The persisted part of the store. */
@@ -123,7 +125,9 @@ export function projectDocument(state: ProjectState = useProjectStore.getState()
  * one opened for these models is the caller's (`openProjectDocument` in `project-file.ts`).
  */
 export function loadProjectDocument(saved: ProjectDocument, options: { dirty?: boolean } = {}): void {
-  const { levels } = useProjectStore.getState();
+  // The file's own levels join the storeys of the models in front (their plans are made when the models sync, as a storey's are); a project with none, over one with none, leaves the levels as the models made them.
+  const { levels: current, userLevels: before = [] } = useProjectStore.getState();
+  const levels = (saved.userLevels?.length ?? 0) > 0 || before.length > 0 ? levelsWithUser(storeysSeen, saved.userLevels) : current;
   // Saved before the title block was the project's: each sheet's copy becomes the project's.
   // Saved when the title block's revision was typed: it becomes a revision record (`revisions.ts`). The sheets
   // print what they printed, so a sheet unchanged since the last issue still reads unchanged at the next one.
@@ -171,11 +175,21 @@ export function loadProjectDocument(saved: ProjectDocument, options: { dirty?: b
     siteArea: doc.siteArea,
     urbanSettings: doc.urbanSettings,
     draftLayers: doc.draftLayers.length > 0 ? doc.draftLayers : [{ ...DEFAULT_DRAFT_LAYER }],
-    views: [...syncDefaultViews(doc.views, levels)],
+    views: [...syncDefaultViews(doc.views, current)],
+    userLevels: doc.userLevels ?? [],
+    levels,
     activeItemId: null,
     dirty: options.dirty ?? false,
   });
   if (standard.unknown) warnUnknownGraphicStandard(standard.unknown);
+}
+
+/** The storeys of the loaded models as `syncProjectWithModels` last saw them: the levels the user defines are added to these. */
+let storeysSeen: readonly StoreyInput[] = [];
+
+/** Make the levels, and the plans a new level lacks, follow the user's levels (`user-levels.ts`) after they change. */
+export function resyncLevels(): void {
+  syncProjectWithModels(useProjectStore.getState().models, storeysSeen);
 }
 
 /**
@@ -184,7 +198,8 @@ export function loadProjectDocument(saved: ProjectDocument, options: { dirty?: b
  */
 export function syncProjectWithModels(models: ProjectModelRef[], storeys: readonly StoreyInput[]): void {
   const state = useProjectStore.getState();
-  const levels = levelsFromStoreys(storeys);
+  storeysSeen = storeys;
+  const levels = levelsWithUser(storeys, state.userLevels);
   const views = state.views.length === 0 ? defaultViews(levels) : syncDefaultViews(state.views, levels);
   const modelsChanged = !knowsAll(state.models, models);
   if (!modelsChanged && views === state.views && sameLevels(state.levels, levels)) return;
@@ -211,7 +226,8 @@ export function setUrbanSettings(patch: Partial<UrbanSettings>): void {
 
 export function resetProject(): void {
   resetWallView();
-  useProjectStore.setState({ ...EMPTY_PROJECT, name: resolve('names.project.untitled'), activeItemId: null, dirty: false });
+  const hadUserLevels = (useProjectStore.getState().userLevels?.length ?? 0) > 0;
+  useProjectStore.setState({ ...EMPTY_PROJECT, ...(hadUserLevels ? { levels: levelsWithUser(storeysSeen) } : {}), name: resolve('names.project.untitled'), activeItemId: null, dirty: false });
 }
 
 export function setProjectName(name: string): void {

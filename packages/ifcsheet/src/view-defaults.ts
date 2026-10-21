@@ -11,7 +11,7 @@
  */
 
 import { nameOf } from './names.js';
-import type { ElevationDirection, ProjectLevel, ProjectView, PlanProjectView } from './document.js';
+import type { ElevationDirection, ProjectLevel, ProjectView, PlanProjectView, UserLevel } from './document.js';
 import { freshProjectId } from './ids.js';
 
 export { freshProjectId } from './ids.js';
@@ -61,6 +61,23 @@ export function levelsFromStoreys(storeys: readonly StoreyInput[]): ProjectLevel
   return levels.sort((a, b) => b.elevation - a.elevation);
 }
 
+/** The levels of the loaded models' storeys together with the ones the user defined; a user level at a storey's height is that storey's level. */
+export function levelsWithUser(storeys: readonly StoreyInput[], userLevels: readonly UserLevel[] = []): ProjectLevel[] {
+  return levelsFromStoreys([...storeys, ...userLevels.map(({ name, elevation }) => ({ name, elevation }))]);
+}
+
+/**
+ * How far above `level`'s floor its plan is cut. A storey's plan is cut at {@link DEFAULT_PLAN_CUT_HEIGHT_M} as ever.
+ * A level the user defined (no storey GlobalIds) may sit closer than that to the one above it, so its cut is held
+ * to half the way up, and never lands on or past the next floor.
+ */
+export function planCutHeight(level: ProjectLevel, levels: readonly ProjectLevel[]): number {
+  if (level.storeyGlobalIds.length > 0) return DEFAULT_PLAN_CUT_HEIGHT_M;
+  const next = levels.filter((l) => !sameElevation(l.elevation, level.elevation) && l.elevation > level.elevation).map((l) => l.elevation - level.elevation);
+  if (next.length === 0) return DEFAULT_PLAN_CUT_HEIGHT_M;
+  return Math.min(DEFAULT_PLAN_CUT_HEIGHT_M, Math.round((Math.min(...next) / 2) * 100) / 100);
+}
+
 export function sameElevation(a: number, b: number): boolean {
   return Math.abs(a - b) < LEVEL_MATCH_TOLERANCE_M;
 }
@@ -81,14 +98,14 @@ export function uniqueViewName(base: string, views: readonly Pick<ProjectView, '
   }
 }
 
-export function planViewFor(level: ProjectLevel, views: readonly ProjectView[], now = Date.now()): PlanProjectView {
+export function planViewFor(level: ProjectLevel, views: readonly ProjectView[], now = Date.now(), levels: readonly ProjectLevel[] = [level]): PlanProjectView {
   return {
     id: freshProjectId('view'),
     kind: 'plan',
     name: uniqueViewName(level.name, views),
     // The frame-derived floor stays with the live level (`levelFloorY`), never in the saved view.
     level: { name: level.name, elevation: level.elevation, storeyGlobalIds: [...level.storeyGlobalIds] },
-    cutHeight: DEFAULT_PLAN_CUT_HEIGHT_M,
+    cutHeight: planCutHeight(level, levels),
     auto: true,
     createdAt: now,
   };
@@ -97,7 +114,7 @@ export function planViewFor(level: ProjectLevel, views: readonly ProjectView[], 
 /** The views a brand-new project gets for `levels`. */
 export function defaultViews(levels: readonly ProjectLevel[], now = Date.now()): ProjectView[] {
   const views: ProjectView[] = [];
-  for (const level of levels) views.push(planViewFor(level, views, now));
+  for (const level of levels) views.push(planViewFor(level, views, now, levels));
   for (const direction of ELEVATION_DIRECTIONS) {
     views.push({ id: freshProjectId('view'), kind: 'elevation', name: elevationName(direction), direction, auto: true, createdAt: now });
   }
@@ -115,6 +132,6 @@ export function syncDefaultViews(views: readonly ProjectView[], levels: readonly
   const missing = levels.filter((level) => !plans.some((p) => resolvePlanLevel(p, [level])));
   if (missing.length === 0) return views;
   const next = [...views];
-  for (const level of missing) next.push(planViewFor(level, next, now));
+  for (const level of missing) next.push(planViewFor(level, next, now, levels));
   return next;
 }

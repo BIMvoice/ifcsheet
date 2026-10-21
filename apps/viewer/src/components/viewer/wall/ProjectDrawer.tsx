@@ -36,6 +36,7 @@ import { RecoveryOffer } from './RecoveryOffer';
 import { ReadinessList } from '../sheets/ReadinessList';
 import { WALL_SKIN } from '../sheets/set-skin';
 import { TitleBlockForm } from './TitleBlockForm';
+import { LevelsSection, useWantsUserLevels } from './LevelsSection';
 import { stepInto } from './wall-nav';
 import { LibraryPanel } from './LibraryPanel';
 import { CommentsSection } from './CommentsSection';
@@ -114,6 +115,7 @@ export function ProjectDrawer({ extent, onClose }: { extent: ModelExtent | null;
   const byView = useViewDrawings((s) => s.byView);
   const fileInput = useRef<HTMLInputElement>(null);
   const [readyOpen, setReadyOpen] = useState(false);
+  const wantsLevels = useWantsUserLevels();
 
   const go = (sheetId: string | null, focus: string | null = null): void => {
     if (!sheetId) return;
@@ -178,6 +180,7 @@ export function ProjectDrawer({ extent, onClose }: { extent: ModelExtent | null;
           <p className="m-0 mt-2 text-xs leading-relaxed text-sky-200">{t('wall.tb.everySheet')}</p>
           <TitleBlockForm />
         </details>
+        {wantsLevels ? <LevelsSection lowest={extent?.min.y ?? 0} /> : null}
         <TagFieldsPanel />
         {DRAWING_KINDS.map(({ kind, labelKey }) => (
           <Group key={kind} title={t(labelKey)}>

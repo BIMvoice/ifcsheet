@@ -31,6 +31,7 @@ Command names typed by the user (CHECKSET, ISSUE, WHATCHANGED, DRAFTSET) stay as
 | Note | Notă | |
 | Symbol | Simbol | |
 | Level / storey | Nivel | |
+| Floor height (of a level) | Cota pardoselii | |
 | Room | Încăpere | 1 încăpere, 2 încăperi, 20 de încăperi |
 | Door / window | Ușă / fereastră | 20 de uși, 20 de ferestre |
 | Area | Arie | In the takeoff column (Arie m²). Ac, Ad, Au are not used in these screens. |

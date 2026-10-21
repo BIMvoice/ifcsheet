@@ -38,7 +38,7 @@ export type {
   ElongatedPaper, GridEnds, GroupPattern, InteriorElevation, NumberGroup, NumberingScheme, Paper, PaperSize, PhaseId, PhaseStyle,
   PlanProjectView, ProjectLevel, ProjectModelRef, ProjectSheet, ProjectView, ProjectViewBase, ProjectViewKind, SectionProjectPlane,
   SectionProjectView, SheetFrame, SheetTemplate, SheetViewport, TemplateSeries, ThreeDProjection, ThreeDProjectView, TitleBlockPosition,
-  ViewDetail, ViewGraphics, ViewGridGraphics, ViewPhases, ViewRaster,
+  UserLevel, ViewDetail, ViewGraphics, ViewGridGraphics, ViewPhases, ViewRaster,
 } from '@bimvoice/ifcsheet';
 export type { ProjectCivilDrawing, ProjectMaterial, ProjectTypicalSection, SavedSectionCut, SavedSectionCutPlane } from './project-records';
 

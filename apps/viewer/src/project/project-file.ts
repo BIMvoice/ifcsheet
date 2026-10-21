@@ -37,7 +37,8 @@ import { readJoineryList } from '@/joinery/spec-file';
 import { readCurrentTypes, readElementTypeList } from '@/element-types/spec';
 import { readStructureProfileList } from '@ifc-lite/create';
 import { readTagFields } from '@/tagfields/tag-fields-file';
-import type { ProjectCivilDrawing, ProjectMaterial, ProjectTypicalSection, ElevationDirection, InteriorElevation, ProjectDocument, ProjectLevel, ProjectModelRef, ProjectSchedule, ProjectSheet, ProjectView, ProjectViewKind, SectionProjectPlane, ViewDetail } from './types';
+import type { ProjectCivilDrawing, ProjectMaterial, ProjectTypicalSection, ElevationDirection, InteriorElevation, ProjectDocument, ProjectLevel, ProjectModelRef, ProjectSchedule, ProjectSheet, ProjectView, ProjectViewKind, SectionProjectPlane, UserLevel, ViewDetail } from './types';
+import { freshProjectId } from './view-defaults';
 import { HEX, WEIGHTS, readGraphics, readPhaseSource } from './view-graphics-file';
 
 export const PROJECT_FILE_SUFFIX = '.ifclite-project.json';
@@ -256,7 +257,21 @@ export function parseProjectFile(text: string, schema: ProjectFileSchema = THIS_
     ...(raw.modelState !== undefined ? { modelState: readSnapshot(raw.modelState, '/modelState') } : {}),
     ...(typeof raw.siteArea === 'number' && Number.isFinite(raw.siteArea) && raw.siteArea > 0 ? { siteArea: raw.siteArea } : {}),
     ...readUrbanSettings(raw.urbanSettings),
+    ...readUserLevels(raw.userLevels),
   };
+}
+
+/** The levels the person defined; an entry that is not a name and a height is dropped, and an id repeated is made new. */
+function readUserLevels(raw: unknown): Pick<ProjectDocument, 'userLevels'> {
+  if (!Array.isArray(raw)) return {};
+  const seen = new Set<string>();
+  const levels = raw.flatMap((v): UserLevel[] => {
+    if (!isObject(v) || !isString(v.name) || !v.name.trim() || !isNumber(v.elevation)) return [];
+    const id = isString(v.id) && v.id && !seen.has(v.id) ? v.id : freshProjectId('level');
+    seen.add(id);
+    return [{ id, name: v.name, elevation: v.elevation }];
+  });
+  return levels.length ? { userLevels: levels } : {};
 }
 
 /** The urban settings; a field that is not what it should be is dropped (its default applies). */
