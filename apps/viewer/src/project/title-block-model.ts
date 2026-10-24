@@ -18,7 +18,7 @@ import { readField } from '@/labels/label-resolve';
 import { useViewerStore } from '@/store';
 import { useProjectStore } from './project-store';
 import { TITLE_BLOCK_FIELDS } from './title-block';
-import { effectiveFields, resolveTitleBlock, type ModelEntity, type ModelFacts, type OwnerPart, type ResolvedField, type TitleSources } from './title-block-sources';
+import { effectiveFields, projectNameFromFile, resolveTitleBlock, type ModelEntity, type ModelFacts, type OwnerPart, type ResolvedField, type TitleSources } from './title-block-sources';
 
 type Raw = string | number | boolean | null | undefined | Raw[];
 const SILENT: ModelFacts = { attribute: () => '', property: () => '', owner: () => '', actor: () => '' };
@@ -145,10 +145,22 @@ function memoised(facts: ModelFacts): ModelFacts {
  */
 let shared: { store: IfcDataStore; modelId: string; version: number; facts: ModelFacts } | null = null;
 
-/** The loaded model as `ModelFacts`, read once per model and edit; silent without one. */
+/** True when a model is loaded and none carries an IFC project (glTF, LandXML, point clouds, IFCX without IfcProject): the title block has nothing to read. */
+export function lacksProjectData(): boolean {
+  return useViewerStore.getState().models.size > 0 && projectStore() === null;
+}
+
+/** A model with no IFC project reads silent, except for its file name. */
+function fileFacts(): ModelFacts {
+  const first = [...useViewerStore.getState().models.values()].find((m) => !m.linked) ?? [...useViewerStore.getState().models.values()][0];
+  const name = first ? projectNameFromFile(first.name) : '';
+  return name ? { ...SILENT, file: () => name } : SILENT;
+}
+
+/** The loaded model as `ModelFacts`, read once per model and edit; silent without one (a model without an IFC project offers its file name). */
 export function modelFacts(): ModelFacts {
   const found = projectStore();
-  if (!found) return SILENT;
+  if (!found) return fileFacts();
   const version = useViewerStore.getState().mutationVersion;
   if (shared && shared.store === found.store && shared.modelId === found.modelId && shared.version === version) return shared.facts;
   const facts = memoised(readModelFacts(found.modelId, found.store));

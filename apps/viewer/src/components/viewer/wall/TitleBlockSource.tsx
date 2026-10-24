@@ -29,6 +29,7 @@ function useSourceLabel(): (s: TitleSource) => string {
   const { t } = useTranslation();
   return (s) => {
     if (s.kind === 'owner') return t(OWNER_LABELS[s.part]);
+    if (s.kind === 'file') return t('wall.tbsrc.file');
     if (s.kind === 'actor') return t('wall.tbsrc.actor', { role: s.role });
     return sourceText(s);
   };

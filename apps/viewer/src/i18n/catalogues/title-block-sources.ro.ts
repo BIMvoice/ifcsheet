@@ -23,6 +23,8 @@ export const titleBlockSourcesRo = {
   'wall.tbsrc.actor': 'Actor cu rolul {role}',
   'wall.tbsrc.ownerShort': 'istoricul proprietarului, {part}',
   'wall.tbsrc.actorShort': 'actor {role}',
+  'wall.tbsrc.file': 'numele fișierului',
+  'wall.tb.missing': 'Acest fișier nu conține date de proiect, deci nimic nu completează {fields}. Introduceți-le manual.',
   'sheets.tb.address': 'Adresă',
   'sheets.tb.organisation': 'Organizație',
 } as const satisfies Partial<Record<TranslationKey, TranslationValue>>;

@@ -32,7 +32,9 @@ export type TitleSource =
   | { kind: 'pset'; pset: string; property: string; on?: ModelEntity }
   | { kind: 'owner'; part: OwnerPart }
   /** The actor assigned to the project (IfcRelAssignsToActor) with this role (IfcActorRole). */
-  | { kind: 'actor'; role: string };
+  | { kind: 'actor'; role: string }
+  /** The name of the model's file, tidied: the project name of a model that carries no IFC project (glTF, LandXML, point cloud). */
+  | { kind: 'file' };
 
 export type TitleSources = Record<string, TitleSource[]>;
 
@@ -42,6 +44,20 @@ export interface ModelFacts {
   property(on: ModelEntity | undefined, pset: string, property: string): string;
   owner(part: OwnerPart): string;
   actor(role: string): string;
+  /** The loaded file's name as a project name; '' when the model has an IFC project (it names itself) or none is loaded. Absent reads as ''. */
+  file?(): string;
+}
+
+const FILE_EXTENSION = /\.(ifc|ifcx|ifczip|ifcxml|glb|gltf|xml|landxml|las|laz|e57|ply|pcd|xyz|pts|ptx|obj|stl|json|zip)$/i;
+
+/** A file name as a project name: no extension, separators read as spaces ("hello_wall-v2.glb" is "hello wall v2"). */
+export function projectNameFromFile(fileName: string): string {
+  return fileName.trim().replace(FILE_EXTENSION, '').replace(/[_\-\s]+/g, ' ').trim();
+}
+
+/** The fields of `fields` that print nothing: nothing typed and no source has a value. The person has to type these. */
+export function fieldsWithoutSource<F extends string>(fields: readonly F[], resolved: Record<string, ResolvedField>): F[] {
+  return fields.filter((f) => !resolved[f]?.value);
 }
 
 const attr = (on: ModelEntity, name: string): TitleSource => ({ kind: 'attribute', on, name });
@@ -53,7 +69,8 @@ const attr = (on: ModelEntity, name: string): TitleSource => ({ kind: 'attribute
  * the model only once someone picks a source for them.
  */
 export const DEFAULT_SOURCES: Readonly<Record<string, readonly TitleSource[]>> = {
-  project: [attr('IfcProject', 'LongName'), attr('IfcProject', 'Name')],
+  // The file name comes last and only answers for a model without an IFC project, so an IFC title block reads what it always did.
+  project: [attr('IfcProject', 'LongName'), attr('IfcProject', 'Name'), { kind: 'file' }],
   address: [attr('IfcSite', 'SiteAddress'), attr('IfcBuilding', 'BuildingAddress')],
   organisation: [{ kind: 'owner', part: 'organisation' }],
 };
@@ -77,6 +94,7 @@ export function sourceText(s: TitleSource): string {
     case 'pset': return `${s.on ? `${s.on}.` : ''}${s.pset}.${s.property}`;
     case 'owner': return `OwnerHistory.${s.part}`;
     case 'actor': return `Actor.${s.role}`;
+    case 'file': return 'File.name';
   }
 }
 
@@ -93,6 +111,7 @@ function read(s: TitleSource, facts: ModelFacts): string {
     case 'pset': return facts.property(s.on, s.pset, s.property);
     case 'owner': return facts.owner(s.part);
     case 'actor': return facts.actor(s.role);
+    case 'file': return facts.file?.() ?? '';
   }
 }
 
@@ -149,6 +168,7 @@ function readSource(v: unknown): TitleSource | null {
   if (s.kind === 'attribute' && on && isText(s.name)) return { kind: 'attribute', on, name: s.name };
   if (s.kind === 'pset' && isText(s.pset) && isText(s.property)) return { kind: 'pset', pset: s.pset, property: s.property, ...(on ? { on } : {}) };
   if (s.kind === 'owner') { const part = OWNER_PARTS.find((p) => p === s.part); return part ? { kind: 'owner', part } : null; }
+  if (s.kind === 'file') return { kind: 'file' };
   if (s.kind === 'actor' && isText(s.role)) return { kind: 'actor', role: s.role };
   return null;
 }

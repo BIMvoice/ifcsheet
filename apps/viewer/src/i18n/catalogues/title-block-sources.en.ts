@@ -19,6 +19,8 @@ export const titleBlockSourcesEn = {
   'wall.tbsrc.actor': 'Actor with role {role}',
   'wall.tbsrc.ownerShort': 'owner history, {part}',
   'wall.tbsrc.actorShort': 'actor {role}',
+  'wall.tbsrc.file': 'file name',
+  'wall.tb.missing': 'This file has no project data, so nothing fills {fields}. Type them in.',
   'sheets.tb.address': 'Address',
   'sheets.tb.organisation': 'Organisation',
 } as const satisfies Record<string, TranslationValue>;
