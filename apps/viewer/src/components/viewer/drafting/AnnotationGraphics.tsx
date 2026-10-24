@@ -108,7 +108,9 @@ function Label({ at, text, px, deg, color, style, anchor = 'middle', shift = 0, 
           fontStyle={style.italic ? 'italic' : 'normal'}
           textAnchor={anchor}
           // The width the frame was measured for: a renderer that hints advances at small sizes would otherwise run the text past it.
-          textLength={textWidthEm(line.text, style) * size || undefined}
+          // Not for a single character: the spacing is spread over the gaps between characters, and one character has none, so the
+          // PDF writer divides by zero and writes `-Infinity Tc` (#292).
+          textLength={[...line.text.trim()].length > 1 ? textWidthEm(line.text, style) * size || undefined : undefined}
           lengthAdjust="spacing"
         >
           {line.text}
